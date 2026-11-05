@@ -1,0 +1,20 @@
+# Go build and test artifacts
+/learnmysql
+/learnmysql.exe
+/bin/
+*.test
+*.out
+coverage/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Editor and operating system files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

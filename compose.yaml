@@ -1,0 +1,28 @@
+services:
+  mysql:
+    image: mysql:8.4.5
+    container_name: mysql-dev
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app_pass
+
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysql -h 127.0.0.1 -uapp -p$$MYSQL_PASSWORD -e 'SELECT 1' appdb >/dev/null 2>&1
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql_data_dev:

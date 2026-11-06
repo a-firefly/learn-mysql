@@ -10,9 +10,16 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type User struct {
+	ID       int64     `joson:"id"`
+	Name     string    `joson:"name"`
+	Email    string    `joson:"email"`
+	CreatedAt time.Time `joson:"created_at"`
+}
+
 func main() {
 	println("hello, world!")
-	
+
 	db, err := sql.Open(
 		"mysql",
 		"app:app_pass@tcp(127.0.0.1:3307)/appdb?parseTime=true&loc=UTC",
@@ -49,17 +56,20 @@ func main() {
 	}
 
 	// 查询
-	var name string
-	var email string
-	var craetedAt time.Time
-	err = db.QueryRowContext(
-		ctx,
-		"SELECT name, email, created_at FROM users WHERE id = ?",
-		2,
-	).Scan(&name, &email, &craetedAt)
+	u, err := getUser(ctx, db, 2)
 	if err != nil {
 		log.Printf("failed to Scan(&name, &email), error: %v\n", err)
 	}
-	fmt.Printf("user: id = 2, name: %s, email: %s, craeteAt: %v\n", name, email, craetedAt)
+	fmt.Printf("user: %v\n", u)
 	// db.ExecContext()
+}
+
+func getUser(ctx context.Context, db *sql.DB, id int64) (User, error) {
+	var u User
+	err := db.QueryRowContext(
+		ctx,
+		"SELECT id, name, email, created_at FROM users WHERE id = ?",
+		id,
+	).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	return u, err
 }

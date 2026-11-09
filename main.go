@@ -17,6 +17,11 @@ type User struct {
 	CreatedAt time.Time `joson:"created_at"`
 }
 
+type UserInput struct {
+	Name     string    `joson:"name"`
+	Email    string    `joson:"email"`
+}
+
 func main() {
 	println("hello, world!")
 
@@ -60,8 +65,20 @@ func main() {
 	if err != nil {
 		log.Printf("failed to Scan(&name, &email), error: %v\n", err)
 	}
-	fmt.Printf("user: %v\n", u)
-	// db.ExecContext()
+	fmt.Printf("user 2: %v\n", u)
+
+	// 查询，使用泛型
+	store := Store{ db: db }
+	u, err = store.One(ctx,
+		"SELECT id, name, email, created_at FROM users WHERE id = ?",
+		scanUser,
+		3,
+	)
+
+	if err != nil {
+		log.Printf("failed to store.One, error: %v\n", err)
+	}
+	fmt.Printf("user 3: %v\n", u)
 }
 
 func getUser(ctx context.Context, db *sql.DB, id int64) (User, error) {

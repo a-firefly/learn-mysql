@@ -5,21 +5,22 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type User struct {
-	ID       int64     `joson:"id"`
-	Name     string    `joson:"name"`
-	Email    string    `joson:"email"`
+	ID        int64     `joson:"id"`
+	Name      string    `joson:"name"`
+	Email     string    `joson:"email"`
 	CreatedAt time.Time `joson:"created_at"`
 }
 
 type UserInput struct {
-	Name     string    `joson:"name"`
-	Email    string    `joson:"email"`
+	Name  string `joson:"name"`
+	Email string `joson:"email"`
 }
 
 func main() {
@@ -27,58 +28,175 @@ func main() {
 
 	db, err := sql.Open(
 		"mysql",
-		"app:app_pass@tcp(127.0.0.1:3307)/appdb?parseTime=true&loc=UTC",
+		"app:app_pass@tcp(127.0.0.1:3307)/appdb?parseTime=true&loc=UTC&timeout=5s&clientFoundRows=true", // 它让 MySQL 的 UPDATE 返回匹配行数，而不是实际发生变化的行数。否则对已有用户重复更新相同数据时，可能返回 0，导致程序错误地判断用户不存在。
 	)
 	if err != nil {
 		log.Fatalf("failed to open db, error: %v\n", err)
 	}
 	defer db.Close()
 
-	if err := db.Ping(); err != nil {
+	// 连接池
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(3 * time.Minute)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // 啥意思
+
+	if err := db.PingContext(ctx); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("mysql 连接成功")
 
-	ctx := context.Background()
+	// 查询，使用泛型
+	store := Store{db: db}
 
-	// 插入
-	result, err := db.ExecContext(
-		ctx,
-		"INSERT INTO users(name, email) VALUES(?, ?)",
-		"kobe",
-		"kobe@qq.com",
-	)
+	mux := http.NewServeMux() // 多路复用器
 
-	if err != nil {
-		log.Printf("failed to db.ExecContext, error: %v\n", err)
-	} else {
+	const userColumns = "id, name, email, created_at"
+
+	// GET /users
+	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
+		// 先省略
+	})
+
+	// GET /users/{id}
+	mux.HandleFunc("GET /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := parseID(w, r)
+		if !ok {
+			// 为啥这里没打印日志？应该是 parseID 内部已经打印错误日志了
+			return
+		}
+
+		user, err := store.One(
+			r.Context(),
+			"SELECT " + userColumns + " FROM users WHERE id = ?",
+			scanUser,
+			id,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, user)
+	})
+
+	// POST /usres
+	// 注册用户
+	mux.HandleFunc("POST /users", func(w http.ResponseWriter, r *http.Request) {
+		in, ok := readInput(w, r)
+		if !ok {
+			return
+		}
+
+		result, err := db.ExecContext(
+			r.Context(),
+			"INSERT INTO user(user, email) VALUES (?, ?)",
+			in.Name, in.Email,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
 		id, err := result.LastInsertId()
 		if err != nil {
-			fmt.Printf("result.LastInsertId(), error: %v\n", err)
-		} else {
-			fmt.Printf("LastInsertId: %d\n", id)
+			writeError(w, err)
+			return
 		}
-	}
 
-	// 查询
-	u, err := getUser(ctx, db, 2)
-	if err != nil {
-		log.Printf("failed to Scan(&name, &email), error: %v\n", err)
-	}
-	fmt.Printf("user 2: %v\n", u)
+		user, err := store.One(
+			r.Context(),
+			"SELECT " + userColumns + " FROM users WHERE id = ?",
+			scanUser,
+			id,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, user)
+	})
 
-	// 查询，使用泛型
-	store := Store{ db: db }
-	u, err = store.One(ctx,
-		"SELECT id, name, email, created_at FROM users WHERE id = ?",
-		scanUser,
-		3,
-	)
+	// 修改指定用户信息
+	// PUT /user/{id}
+	mux.HandleFunc("PUT /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := parseID(w, r)
+		if !ok {
+			return
+		}
 
-	if err != nil {
-		log.Printf("failed to store.One, error: %v\n", err)
-	}
-	fmt.Printf("user 3: %v\n", u)
+		in, ok := readInput(w, r)
+		if !ok {
+			return
+		}
+
+		result, err := db.ExecContext(
+			r.Context(),
+			"UPDAE users SET name = ? email = ? WHERE id = ?",
+			in.Name, in.Email, id,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		n, err := result.RowsAffected()
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		if n ==0 {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+
+		user, err := store.One(
+			r.Context(),
+			"SELECT " + userColumns + " FROM users WHERE id = ?",
+			scanUser,
+			id,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, user)
+	})
+
+	// 删除指定用户
+	// DELETE /users/{id}
+	mux.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id, ok := parseID(w, r)
+		if !ok {
+			return
+		}
+
+		result, err := db.ExecContext(
+			r.Context(),
+			"DELETE FROM user WHERE id = ?",
+			id,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		n, err := result.RowsAffected()
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		if n ==0 {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	log.Println("HTTP server listening on 127.0.0.1:8080")
+	log.Fatal(http.ListenAndServe("127.0.0.1:8080", mux))
 }
 
 func getUser(ctx context.Context, db *sql.DB, id int64) (User, error) {

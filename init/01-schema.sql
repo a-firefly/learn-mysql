@@ -6,3 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
 
     UNIQUE KEY uk_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE accounts (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    balance_cents BIGINT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+INSERT INTO accounts (balance_cents) VALUES(10000), (5000);

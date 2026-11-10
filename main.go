@@ -55,16 +55,17 @@ func main() {
 
 	const userColumns = "id, name, email, created_at"
 
+	// 获取用户列表
 	// GET /users
 	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
 		// 先省略
 	})
 
+	// 获取指定用户
 	// GET /users/{id}
-	mux.HandleFunc("GET /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := parseID(w, r)
 		if !ok {
-			// 为啥这里没打印日志？应该是 parseID 内部已经打印错误日志了
 			return
 		}
 
@@ -92,7 +93,7 @@ func main() {
 
 		result, err := db.ExecContext(
 			r.Context(),
-			"INSERT INTO user(user, email) VALUES (?, ?)",
+			"INSERT INTO users(name, email) VALUES (?, ?)",
 			in.Name, in.Email,
 		)
 		if err != nil {
@@ -120,8 +121,8 @@ func main() {
 	})
 
 	// 修改指定用户信息
-	// PUT /user/{id}
-	mux.HandleFunc("PUT /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+	// PUT /users/{id}
+	mux.HandleFunc("PUT /users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := parseID(w, r)
 		if !ok {
 			return

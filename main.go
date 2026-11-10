@@ -58,7 +58,17 @@ func main() {
 	// 获取用户列表
 	// GET /users
 	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
-		// 先省略
+		list, err := store.All(
+			r.Context(),
+			"SELECT " + userColumns +  " FROM users ORDER BY id DESC LIMIT 100",
+			scanUser,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, list)
 	})
 
 	// 获取指定用户

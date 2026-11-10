@@ -135,7 +135,7 @@ func main() {
 
 		result, err := db.ExecContext(
 			r.Context(),
-			"UPDAE users SET name = ? email = ? WHERE id = ?",
+			"UPDATE users SET name = ?, email = ? WHERE id = ?",
 			in.Name, in.Email, id,
 		)
 		if err != nil {

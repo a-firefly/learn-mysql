@@ -3,7 +3,7 @@
 BASE_URL ?= http://127.0.0.1:8080
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
-.PHONY: list create update delete
+.PHONY: list create update delete transfer
 
 list:
 	curl $(BASE_URL)/users
@@ -24,10 +24,10 @@ delete:
 transfer:
 	curl -X POST $(BASE_URL)/transfer \
 		-H 'Content-Type: application/json' \
-		-d '{"from_id":"$(word 1,$(ARGS))","to_id":"$(word 2,$(ARGS))","cents":"$(word 3,$(ARGS))"}'
+		-d '{"from_id":$(word 1,$(ARGS)),"to_id":$(word 2,$(ARGS)),"cents":$(word 3,$(ARGS))}'
 
-# 创建、更新、删除时，后续目标作为参数；其他情况直接按 ID 查询。
-ifneq ($(filter create update delete,$(firstword $(MAKECMDGOALS))),)
+# 创建、更新、删除、转账时，后续目标作为参数；其他情况直接按 ID 查询。
+ifneq ($(filter create update delete transfer,$(firstword $(MAKECMDGOALS))),)
 %:
 	@:
 else

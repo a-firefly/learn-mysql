@@ -223,7 +223,7 @@ func main() {
 		var in TransferInput
 		err := decoder.Decode(&in)
 		if err != nil {
-			writeError(w, err)
+			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return
 		}
 

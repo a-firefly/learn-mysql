@@ -6,6 +6,7 @@ make 1
 make create lily lily@qq.com
 make update 1 lily lily@qq.com
 make delete 1
+make transfer 1 2 100
 ```
 
 直接映射到对应的 curl 命令，运行 `make` 默认查询用户列表。
@@ -17,6 +18,8 @@ make list BASE_URL=http://127.0.0.1:8080
 ```
 
 每次运行一个操作，按示例提供完整参数。姓名和邮箱使用不含空格、引号等特殊字符的简单值。
+
+`make transfer 1 2 100` 从账户 1 向账户 2 转账 100 分；三个参数均为整数，JSON 中使用数字，不加双引号。
 
 
 ### 创建用户

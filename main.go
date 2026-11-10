@@ -176,7 +176,7 @@ func main() {
 
 		result, err := db.ExecContext(
 			r.Context(),
-			"DELETE FROM user WHERE id = ?",
+			"DELETE FROM users WHERE id = ?",
 			id,
 		)
 		if err != nil {

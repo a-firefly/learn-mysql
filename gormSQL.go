@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -68,7 +67,6 @@ func startServer() {
 		*/
 		err := usersDB.Create(r.Context(), &user)
 		if err != nil {
-			// 这个函数应该没有覆盖 gorm 中的 error，稍后处理
 			writeError(w, err)
 			return
 		}
@@ -85,10 +83,6 @@ func startServer() {
 
 		user, err := usersDB.Where("id = ?", id).First(r.Context())
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "user not found", http.StatusNotFound)
-				return
-			}
 			writeError(w, err)
 			return
 		}
@@ -155,7 +149,7 @@ func startServer() {
 			w.Write([]byte("user not found"))
 			return
 		}
-		writeJSON(w, http.StatusOK, user) // user 信息不全，只有 name 和 email
+		w.Write([]byte("修改成功")) // 自动设置 status 200 
 	})
 
 	// 4. 查询列表
@@ -190,7 +184,7 @@ func startServer() {
 			w.Write([]byte("user not found"))
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		w.Write([]byte("删除成功")) // 自动设置 status 200 
 	})
 
 	log.Println("HTTP server listening on 127.0.0.1:8080")

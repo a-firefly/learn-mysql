@@ -1,28 +1,29 @@
 .DEFAULT_GOAL := list
 
 BASE_URL ?= http://127.0.0.1:8080
+CURL := curl -w '\nstatus: %{http_code}\n'
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
 .PHONY: list create update delete transfer
 
 list:
-	curl $(BASE_URL)/users
+	$(CURL) $(BASE_URL)/users
 
 create:
-	curl -X POST $(BASE_URL)/users \
+	$(CURL) -X POST $(BASE_URL)/users \
 		-H 'Content-Type: application/json' \
 		-d '{"name":"$(word 1,$(ARGS))","email":"$(word 2,$(ARGS))"}'
 
 update:
-	curl -X PUT $(BASE_URL)/users/$(word 1,$(ARGS)) \
+	$(CURL) -X PUT $(BASE_URL)/users/$(word 1,$(ARGS)) \
 		-H 'Content-Type: application/json' \
 		-d '{"name":"$(word 2,$(ARGS))","email":"$(word 3,$(ARGS))"}'
 
 delete:
-	curl -X DELETE $(BASE_URL)/users/$(word 1,$(ARGS))
+	$(CURL) -X DELETE $(BASE_URL)/users/$(word 1,$(ARGS))
 
 transfer:
-	curl -X POST $(BASE_URL)/transfer \
+	$(CURL) -X POST $(BASE_URL)/transfer \
 		-H 'Content-Type: application/json' \
 		-d '{"from_id":$(word 1,$(ARGS)),"to_id":$(word 2,$(ARGS)),"cents":$(word 3,$(ARGS))}'
 
@@ -32,5 +33,5 @@ ifneq ($(filter create update delete transfer,$(firstword $(MAKECMDGOALS))),)
 	@:
 else
 %:
-	curl $(BASE_URL)/users/$@
+	$(CURL) $(BASE_URL)/users/$@
 endif

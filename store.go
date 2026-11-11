@@ -54,3 +54,14 @@ func scanUser(s Scanner) (User, error) {
 	err := s.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	return u, err
 }
+
+// 用于和泛型方法对比的 普通查询方法
+func getUser(ctx context.Context, db *sql.DB, id int64) (User, error) {
+	var u User
+	err := db.QueryRowContext(
+		ctx,
+		"SELECT id, name, email, created_at FROM users WHERE id = ?",
+		id,
+	).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	return u, err
+}

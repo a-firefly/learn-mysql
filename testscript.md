@@ -40,3 +40,21 @@ curl -X PUT http://127.0.0.1:8080/users/1 \
 
 ### 删除用户
 curl -X DELETE http://127.0.0.1:8080/users/1
+
+### 这里的 `-X` 是 `curl` 的参数，用来**指定 HTTP 请求方法**。
+
+文档里的例子：
+
+- `-X POST`：发送 POST 请求，创建用户。
+- `-X PUT`：发送 PUT 请求，更新用户。
+- `-X DELETE`：发送 DELETE 请求，删除用户。
+
+例如：
+
+```bash
+curl -X DELETE http://127.0.0.1:8080/users/1
+```
+
+表示向这个地址发送 DELETE 请求，删除 ID 为 `1` 的用户。
+
+普通 `curl URL` 默认使用 GET；使用 `-d` 发送数据时，默认会使用 POST，所以创建用户示例里的 `-X POST` 可以省略。

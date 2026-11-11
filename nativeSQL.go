@@ -17,15 +17,15 @@ import (
 // 还有 GORM 版本
 
 type User struct {
-	ID        int64     `joson:"id"`
-	Name      string    `joson:"name"`
-	Email     string    `joson:"email"`
-	CreatedAt time.Time `joson:"created_at"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type UserInput struct {
-	Name  string `joson:"name"`
-	Email string `joson:"email"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type TransferInput struct {

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 )
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
@@ -19,7 +20,8 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 }
 
 func writeError(w http.ResponseWriter, err error) {
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) ||
+		errors.Is(err, gorm.ErrRecordNotFound) {
 		http.Error(w, "user not found", http.StatusNotFound)
 		return
 	}
@@ -41,7 +43,7 @@ func parseID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 		return 0, false
 	}
 
-	return  id, true
+	return id, true
 }
 
 func readInput(w http.ResponseWriter, r *http.Request) (UserInput, bool) {

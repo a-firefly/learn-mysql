@@ -15,9 +15,9 @@ GORM 默认将结构体名转为蛇形命名的复数形式作为表名，因此
 - User → users
 */
 type Usr struct {
-	ID        int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name      string    `gorm:"size:100;not null" json:"name"`
-	Email     string    `gorm:"size:191;not null;uniqueIndex:uk_users_emial" json:"email"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -157,11 +157,6 @@ func startServer() {
 		list, err := usersDB.Order("id DESC").Limit(10).Find(r.Context())
 		if err != nil {
 			writeError(w, err)
-			return
-		}
-		if len(list) == 0 {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("no user"))
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
